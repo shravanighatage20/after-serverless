@@ -1,0 +1,148 @@
+{
+  "D:\\Documents\\internship\\Backend learning\\after-serverless\\my-service": {
+    "versionSfCore": null,
+    "versionFramework": "4.0.38",
+    "isWithinCompose": false,
+    "composeOrgName": null,
+    "servicePath": "D:\\Documents\\internship\\Backend learning\\after-serverless\\my-service",
+    "serviceConfigFileName": "serverless.yml",
+    "service": {
+      "service": "crud-demo",
+      "provider": {
+        "name": "aws",
+        "runtime": "nodejs20.x",
+        "region": "ca-central-1",
+        "environment": {
+          "DynamoDBTableName": "${self:custom.dynamoDbTableName}"
+        },
+        "iamRoleStatements": [
+          {
+            "Effect": "Allow",
+            "Action": [
+              "dynamodb:BatchGetItem",
+              "dynamodb:BatchWriteItem",
+              "dynamodb:TagResource",
+              "dynamodb:UnTagResource",
+              "dynamodb:PutItem",
+              "dynamodb:DeleteItem",
+              "dynamodb:GetItem",
+              "dynamodb:Scan",
+              "dynamodb:Query",
+              "dynamodb:UpdateItem"
+            ],
+            "Resource": "arn:aws:dynamodb:*:*:table/${self:custom.dynamoDbTableName}"
+          },
+          {
+            "Effect": "Allow",
+            "Action": [
+              "logs:CreateLogStream",
+              "logs:CreateLogGroup",
+              "logs:PutLogEvents"
+            ],
+            "Resource": "*"
+          }
+        ]
+      },
+      "functions": {
+        "crudOperation": {
+          "handler": "lambdas/src/index.handler",
+          "name": "${self:custom.lambdaFuncName}",
+          "timeout": 30,
+          "events": [
+            {
+              "http": {
+                "path": "${self:custom.lambdaFuncName}",
+                "method": "post",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "DYNAMODB_TABLE": "${self:custom.dynamoDbTableName}"
+          }
+        }
+      },
+      "resources": {
+        "Resources": {
+          "DynamoDBTable": {
+            "Type": "AWS::DynamoDB::Table",
+            "Properties": {
+              "TableName": "${self:custom.dynamoDbTableName}",
+              "AttributeDefinitions": [
+                {
+                  "AttributeName": "${self:custom.elementName}",
+                  "AttributeType": "${self:custom.elementType}"
+                }
+              ],
+              "KeySchema": [
+                {
+                  "AttributeName": "${self:custom.elementName}",
+                  "KeyType": "HASH"
+                }
+              ],
+              "ProvisionedThroughput": {
+                "ReadCapacityUnits": 5,
+                "WriteCapacityUnits": 5
+              }
+            }
+          },
+          "ApiGatewayPermission": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+              "FunctionName": {
+                "Fn::GetAtt": [
+                  "CrudOperationLambdaFunction",
+                  "Arn"
+                ]
+              },
+              "Action": "lambda:InvokeFunction",
+              "Principal": "apigateway.amazonaws.com"
+            }
+          }
+        }
+      },
+      "custom": {
+        "lambdaFuncName": "shravani_git_lambda",
+        "dynamoDbTableName": "shravani_git_dynamo_db",
+        "apiName": "shravani_git_api",
+        "environmentName": "Prod",
+        "elementName": "StudentId",
+        "elementType": "S"
+      }
+    },
+    "serviceRawFile": "service: crud-demo\r\n\r\nprovider:\r\n  name: aws\r\n  runtime: nodejs20.x\r\n  region: ca-central-1\r\n  environment:\r\n    DynamoDBTableName: ${self:custom.dynamoDbTableName}\r\n\r\n  iamRoleStatements:\r\n    - Effect: Allow\r\n      Action:\r\n        - dynamodb:BatchGetItem\r\n        - dynamodb:BatchWriteItem\r\n        - dynamodb:TagResource\r\n        - dynamodb:UnTagResource\r\n        - dynamodb:PutItem\r\n        - dynamodb:DeleteItem\r\n        - dynamodb:GetItem\r\n        - dynamodb:Scan\r\n        - dynamodb:Query\r\n        - dynamodb:UpdateItem\r\n      Resource: arn:aws:dynamodb:*:*:table/${self:custom.dynamoDbTableName}\r\n    - Effect: Allow\r\n      Action:\r\n        - logs:CreateLogStream\r\n        - logs:CreateLogGroup\r\n        - logs:PutLogEvents\r\n      Resource: \"*\"\r\n\r\nfunctions:\r\n  crudOperation:\r\n    handler: lambdas/src/index.handler\r\n    name: ${self:custom.lambdaFuncName}\r\n    timeout: 30\r\n    events:\r\n      - http:\r\n          path: ${self:custom.lambdaFuncName}\r\n          method: post\r\n          cors: true\r\n    environment:\r\n      DYNAMODB_TABLE: ${self:custom.dynamoDbTableName}\r\n\r\nresources:\r\n  Resources:\r\n    DynamoDBTable:\r\n      Type: AWS::DynamoDB::Table\r\n      Properties:\r\n        TableName: ${self:custom.dynamoDbTableName}\r\n        AttributeDefinitions:\r\n          - AttributeName: ${self:custom.elementName}\r\n            AttributeType: ${self:custom.elementType}\r\n        KeySchema:\r\n          - AttributeName: ${self:custom.elementName}\r\n            KeyType: HASH\r\n        ProvisionedThroughput:\r\n          ReadCapacityUnits: 5\r\n          WriteCapacityUnits: 5\r\n\r\n    ApiGatewayPermission:\r\n      Type: AWS::Lambda::Permission\r\n      Properties:\r\n        FunctionName: !GetAtt CrudOperationLambdaFunction.Arn\r\n        Action: lambda:InvokeFunction\r\n        Principal: apigateway.amazonaws.com\r\n\r\ncustom:\r\n  lambdaFuncName: shravani_git_lambda\r\n  dynamoDbTableName: shravani_git_dynamo_db\r\n  apiName: shravani_git_api\r\n  environmentName: Prod\r\n  elementName: StudentId\r\n  elementType: S\r\n\r\n\r\n# provider:\r\n#   name: aws\r\n#   runtime: nodejs14.x\r\n#   region: ca-central-1\r\n#   iamRoleStatements:\r\n#     - Effect: Allow\r\n#       Action:\r\n#         - dynamodb:*\r\n#       Resource: \"*\"\r\n#   role: arn:aws:iam::839728096237:role/shravani-serverless-role\r\n\r\n\r\n\r\n\r\n# service: demo-service\r\n\r\n# provider:\r\n#   name: aws\r\n#   runtime: nodejs14.x\r\n#   region: us-east-1\r\n\r\n#   environment:\r\n#     DYNAMODB_TABLE: ${self:service}-${opt:stage, self:provider.stage}\r\n\r\n# functions:\r\n#   hello:\r\n#     handler: handler.hello\r\n#     events:\r\n#       - http:\r\n#           path: hello\r\n#           method: get\r\n\r\n# resources:\r\n#   Resources:\r\n#     MyDynamoDbTable:\r\n#       Type: AWS::DynamoDB::Table\r\n#       Properties:\r\n#         TableName: ${self:provider.environment.DYNAMODB_TABLE}\r\n#         AttributeDefinitions:\r\n#           - AttributeName: id\r\n#             AttributeType: S\r\n#         KeySchema:\r\n#           - AttributeName: id\r\n#             KeyType: HASH\r\n#         ProvisionedThroughput:\r\n#           ReadCapacityUnits: 5\r\n#           WriteCapacityUnits: 5\r\n",
+    "command": [
+      "create"
+    ],
+    "options": {
+      "template": "aws-nodejs",
+      "path": "my-service"
+    },
+    "error": {
+      "message": "User: arn:aws:iam::839728096237:user/shravani_serverless is not authorized to perform: sts:AssumeRole on resource: arn:aws:iam::839728096237:user/shravani_serverless",
+      "stack": "AccessDenied: User: arn:aws:iam::839728096237:user/shravani_serverless is not authorized to perform: sts:AssumeRole on resource: arn:aws:iam::839728096237:user/shravani_serverless\n    at throwDefaultError (file:///C:/Users/Shravani/.serverless/releases/4.0.38/package/dist/sf-core.js:85:7935)\n    at file:///C:/Users/Shravani/.serverless/releases/4.0.38/package/dist/sf-core.js:85:8209\n    at de_CommandError (file:///C:/Users/Shravani/.serverless/releases/4.0.38/package/dist/sf-core.js:111:42769)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async file:///C:/Users/Shravani/.serverless/releases/4.0.38/package/dist/sf-core.js:76:90842\n    at async file:///C:/Users/Shravani/.serverless/releases/4.0.38/package/dist/sf-core.js:86:1884\n    at async file:///C:/Users/Shravani/.serverless/releases/4.0.38/package/dist/sf-core.js:85:26453\n    at async file:///C:/Users/Shravani/.serverless/releases/4.0.38/package/dist/sf-core.js:76:20219\n    at async Object.roleAssumer (file:///C:/Users/Shravani/.serverless/releases/4.0.38/package/dist/sf-core.js:111:68289)\n    at async file:///C:/Users/Shravani/.serverless/releases/4.0.38/package/dist/sf-core.js:76:69252\n    at async coalesceProvider (file:///C:/Users/Shravani/.serverless/releases/4.0.38/package/dist/sf-core.js:76:69630)\n    at async file:///C:/Users/Shravani/.serverless/releases/4.0.38/package/dist/sf-core.js:76:69919\n    at async file:///C:/Users/Shravani/.serverless/releases/4.0.38/package/dist/sf-core.js:146:371583\n    at async Object.resolveServiceConfig (file:///C:/Users/Shravani/.serverless/releases/4.0.38/package/dist/sf-core.js:1065:28355)\n    at async file:///C:/Users/Shravani/.serverless/releases/4.0.38/package/dist/sf-core.js:1068:1209\n    at async route (file:///C:/Users/Shravani/.serverless/releases/4.0.38/package/dist/sf-core.js:1068:1182)"
+    },
+    "accessKeyV2": "<REDACTED>",
+    "accessKeyV1": "<REDACTED>",
+    "orgId": "f931cb80-ac6e-4637-a226-059efae570f6",
+    "orgName": "shravanighatage",
+    "userId": "9Bg2NW4XmrTM6tFmHZ",
+    "dashboard": {
+      "isEnabledForService": false,
+      "requiredAuthentication": false,
+      "orgFeaturesInUse": null,
+      "orgObservabilityIntegrations": null,
+      "serviceAppId": null,
+      "serviceProvider": null,
+      "instanceParameters": null
+    },
+    "userName": "shravanighatage",
+    "subscription": null,
+    "userEmail": "shravanighatage11@gmail.com",
+    "serviceProviderAwsCfStackId": null,
+    "serviceProviderAwsCfStackCreated": null,
+    "serviceProviderAwsCfStackUpdated": null,
+    "serviceProviderAwsCfStackStatus": null,
+    "serviceProviderAwsCfStackOutputs": null
+  }
+}

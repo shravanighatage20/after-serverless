@@ -1,0 +1,126 @@
+# "org" ensures this Service is used with the correct Serverless Framework Access Key.
+org: shravanighatage
+# "app" enables Serverless Framework Dashboard features and sharing them with other Services.
+app: serverless-git
+service: shravani-auto-crud-demo
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: ca-central-1
+  environment:
+    DynamoDBTableName: ${self:custom.dynamoDbTableName}
+
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:BatchGetItem
+        - dynamodb:BatchWriteItem
+        - dynamodb:TagResource
+        - dynamodb:UnTagResource
+        - dynamodb:PutItem
+        - dynamodb:DeleteItem
+        - dynamodb:GetItem
+        - dynamodb:Scan
+        - dynamodb:Query
+        - dynamodb:UpdateItem
+      Resource: arn:aws:dynamodb:*:*:table/${self:custom.dynamoDbTableName}
+    - Effect: Allow
+      Action:
+        - logs:CreateLogStream
+        - logs:CreateLogGroup
+        - logs:PutLogEvents
+      Resource: "*"
+
+functions:
+  crudOperation:
+    handler: lambdas/src/index.handler
+    name: ${self:custom.lambdaFuncName}
+    timeout: 30
+    events:
+      - http:
+          path: ${self:custom.lambdaFuncName}
+          method: post
+          cors: true
+    environment:
+      DYNAMODB_TABLE: ${self:custom.dynamoDbTableName}
+
+resources:
+  Resources:
+    DynamoDBTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:custom.dynamoDbTableName}
+        AttributeDefinitions:
+          - AttributeName: ${self:custom.elementName}
+            AttributeType: ${self:custom.elementType}
+        KeySchema:
+          - AttributeName: ${self:custom.elementName}
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
+
+    ApiGatewayPermission:
+      Type: AWS::Lambda::Permission
+      Properties:
+        FunctionName: !GetAtt CrudOperationLambdaFunction.Arn
+        Action: lambda:InvokeFunction
+        Principal: apigateway.amazonaws.com
+
+custom:
+  lambdaFuncName: shravani_git_lambda
+  dynamoDbTableName: shravani_git_dynamo_db
+  apiName: shravani_git_api
+  environmentName: Prod
+  elementName: StudentId
+  elementType: S
+
+
+# provider:
+#   name: aws
+#   runtime: nodejs14.x
+#   region: ca-central-1
+#   iamRoleStatements:
+#     - Effect: Allow
+#       Action:
+#         - dynamodb:*
+#       Resource: "*"
+#   role: arn:aws:iam::839728096237:role/shravani-serverless-role
+
+
+
+
+# service: demo-service
+
+# provider:
+#   name: aws
+#   runtime: nodejs14.x
+#   region: us-east-1
+
+#   environment:
+#     DYNAMODB_TABLE: ${self:service}-${opt:stage, self:provider.stage}
+
+# functions:
+#   hello:
+#     handler: handler.hello
+#     events:
+#       - http:
+#           path: hello
+#           method: get
+
+# resources:
+#   Resources:
+#     MyDynamoDbTable:
+#       Type: AWS::DynamoDB::Table
+#       Properties:
+#         TableName: ${self:provider.environment.DYNAMODB_TABLE}
+#         AttributeDefinitions:
+#           - AttributeName: id
+#             AttributeType: S
+#         KeySchema:
+#           - AttributeName: id
+#             KeyType: HASH
+#         ProvisionedThroughput:
+#           ReadCapacityUnits: 5
+#           WriteCapacityUnits: 5
